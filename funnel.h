@@ -24,10 +24,20 @@ struct funnel_drvdata
     unsigned long priority;
 };
 
+#ifdef _DEBUG_LANRAN
+u32 __tmp;
+#endif
+
 static inline void CS_UNLOCK(void __iomem *addr)
 {
     do
     {
+#ifdef _DEBUG_LANRAN
+        __tmp = readl_relaxed(addr + CORESIGHT_LAR);
+        printk(KERN_INFO "[" DRVR_NAME "]"
+                         "LAR: 0x%x --> 0x%x",
+               __tmp, CORESIGHT_UNLOCK);
+#endif
         writel_relaxed(CORESIGHT_UNLOCK, addr + CORESIGHT_LAR);
         /* Make sure everyone has seen this */
         mb();
@@ -40,6 +50,12 @@ static inline void CS_LOCK(void __iomem *addr)
     {
         /* Wait for things to settle */
         mb();
+#ifdef _DEBUG_LANRAN
+        __tmp = readl_relaxed(addr + CORESIGHT_LAR);
+        printk(KERN_INFO "[" DRVR_NAME "]"
+                         "LAR: 0x%x --> 0x%x",
+               __tmp, 0x0);
+#endif
         writel_relaxed(0x0, addr + CORESIGHT_LAR);
     } while (0);
 }
@@ -51,11 +67,17 @@ static void funnel_enable_hw(struct funnel_drvdata *drvdata, int port)
     CS_UNLOCK(drvdata->base);
 
     functl = readl_relaxed(drvdata->base + FUNNEL_FUNCTL);
+#ifdef _DEBUG_LANRAN
+    _tmp = functl;
+#endif
     functl &= ~FUNNEL_HOLDTIME_MASK;
     functl |= FUNNEL_HOLDTIME;
-
-    // port = 0
     functl |= (1 << port);
+#ifdef _DEBUG_LANRAN
+    printk(KERN_INFO "[" DRVR_NAME "]"
+                     "enable: CSTF: 0x%x --> 0x%x",
+           __tmp, functl);
+#endif
     writel_relaxed(functl, drvdata->base + FUNNEL_FUNCTL);
     // writel_relaxed(drvdata->priority, drvdata->base + FUNNEL_PRICTL);
 
@@ -69,7 +91,15 @@ static void funnel_disable_hw(struct funnel_drvdata *drvdata, int inport)
     CS_UNLOCK(drvdata->base);
 
     functl = readl_relaxed(drvdata->base + FUNNEL_FUNCTL);
+#ifdef _DEBUG_LANRAN
+    _tmp = functl;
+#endif
     functl &= ~(1 << inport);
+#ifdef _DEBUG_LANRAN
+    printk(KERN_INFO "[" DRVR_NAME "]"
+                     "disable: CSTF: 0x%x --> 0x%x",
+           __tmp, functl);
+#endif
     writel_relaxed(functl, drvdata->base + FUNNEL_FUNCTL);
 
     CS_LOCK(drvdata->base);
