@@ -32,12 +32,6 @@ static inline void CS_UNLOCK(void __iomem *addr)
 {
     do
     {
-#ifdef _DEBUG_LANRAN
-        __tmp = readl_relaxed(addr + CORESIGHT_LAR);
-        printk(KERN_INFO "[" DRVR_NAME "]"
-                         "LAR: 0x%x --> 0x%x",
-               __tmp, CORESIGHT_UNLOCK);
-#endif
         writel_relaxed(CORESIGHT_UNLOCK, addr + CORESIGHT_LAR);
         /* Make sure everyone has seen this */
         mb();
@@ -50,12 +44,6 @@ static inline void CS_LOCK(void __iomem *addr)
     {
         /* Wait for things to settle */
         mb();
-#ifdef _DEBUG_LANRAN
-        __tmp = readl_relaxed(addr + CORESIGHT_LAR);
-        printk(KERN_INFO "[" DRVR_NAME "]"
-                         "LAR: 0x%x --> 0x%x",
-               __tmp, 0x0);
-#endif
         writel_relaxed(0x0, addr + CORESIGHT_LAR);
     } while (0);
 }
@@ -68,7 +56,7 @@ static void funnel_enable_hw(struct funnel_drvdata *drvdata, int port)
 
     functl = readl_relaxed(drvdata->base + FUNNEL_FUNCTL);
 #ifdef _DEBUG_LANRAN
-    _tmp = functl;
+    __tmp = functl;
 #endif
     functl &= ~FUNNEL_HOLDTIME_MASK;
     functl |= FUNNEL_HOLDTIME;
@@ -92,7 +80,7 @@ static void funnel_disable_hw(struct funnel_drvdata *drvdata, int inport)
 
     functl = readl_relaxed(drvdata->base + FUNNEL_FUNCTL);
 #ifdef _DEBUG_LANRAN
-    _tmp = functl;
+    __tmp = functl;
 #endif
     functl &= ~(1 << inport);
 #ifdef _DEBUG_LANRAN

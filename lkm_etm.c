@@ -3,7 +3,6 @@
 #include <linux/kernel.h>
 #include <asm/io.h>
 #include <linux/slab.h>
-#include "funnel.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Huana Liu");
@@ -18,6 +17,8 @@ MODULE_VERSION("0.01");
 
 #define ADDR_SIZE 1024
 #define _DEBUG_LANRAN
+
+#include "funnel.h"
 
 // uint32_t CSTF_OLD = 0x300;
 
@@ -46,6 +47,7 @@ static int __init lkm_example_init(void)
     map_addresses();
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
+    return 0;
 }
 
 static void __exit lkm_example_exit(void)
