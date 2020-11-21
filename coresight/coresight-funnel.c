@@ -26,12 +26,12 @@
 
 #include "coresight-priv.h"
 
-#define FUNNEL_FUNCTL		0x000
-#define FUNNEL_PRICTL		0x004
+#define FUNNEL_FUNCTL 0x000
+#define FUNNEL_PRICTL 0x004
 
-#define FUNNEL_HOLDTIME_MASK	0xf00
-#define FUNNEL_HOLDTIME_SHFT	0x8
-#define FUNNEL_HOLDTIME		(0x7 << FUNNEL_HOLDTIME_SHFT)
+#define FUNNEL_HOLDTIME_MASK 0xf00
+#define FUNNEL_HOLDTIME_SHFT 0x8
+#define FUNNEL_HOLDTIME (0x7 << FUNNEL_HOLDTIME_SHFT)
 
 /**
  * struct funnel_drvdata - specifics associated to a funnel component
@@ -41,12 +41,13 @@
  * @csdev:	component vitals needed by the framework.
  * @priority:	port selection order.
  */
-struct funnel_drvdata {
-	void __iomem		*base;
-	struct device		*dev;
-	struct clk		*atclk;
-	struct coresight_device	*csdev;
-	unsigned long		priority;
+struct funnel_drvdata
+{
+	void __iomem *base;
+	struct device *dev;
+	struct clk *atclk;
+	struct coresight_device *csdev;
+	unsigned long priority;
 };
 
 static void funnel_enable_hw(struct funnel_drvdata *drvdata, int port)
@@ -66,7 +67,7 @@ static void funnel_enable_hw(struct funnel_drvdata *drvdata, int port)
 }
 
 static int funnel_enable(struct coresight_device *csdev, int inport,
-			 int outport)
+						 int outport)
 {
 	struct funnel_drvdata *drvdata = dev_get_drvdata(csdev->dev.parent);
 
@@ -90,7 +91,7 @@ static void funnel_disable_hw(struct funnel_drvdata *drvdata, int inport)
 }
 
 static void funnel_disable(struct coresight_device *csdev, int inport,
-			   int outport)
+						   int outport)
 {
 	struct funnel_drvdata *drvdata = dev_get_drvdata(csdev->dev.parent);
 
@@ -100,16 +101,16 @@ static void funnel_disable(struct coresight_device *csdev, int inport,
 }
 
 static const struct coresight_ops_link funnel_link_ops = {
-	.enable		= funnel_enable,
-	.disable	= funnel_disable,
+	.enable = funnel_enable,
+	.disable = funnel_disable,
 };
 
 static const struct coresight_ops funnel_cs_ops = {
-	.link_ops	= &funnel_link_ops,
+	.link_ops = &funnel_link_ops,
 };
 
 static ssize_t priority_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
+							 struct device_attribute *attr, char *buf)
 {
 	struct funnel_drvdata *drvdata = dev_get_drvdata(dev->parent);
 	unsigned long val = drvdata->priority;
@@ -118,8 +119,8 @@ static ssize_t priority_show(struct device *dev,
 }
 
 static ssize_t priority_store(struct device *dev,
-			      struct device_attribute *attr,
-			      const char *buf, size_t size)
+							  struct device_attribute *attr,
+							  const char *buf, size_t size)
 {
 	int ret;
 	unsigned long val;
@@ -146,7 +147,7 @@ static u32 get_funnel_ctrl_hw(struct funnel_drvdata *drvdata)
 }
 
 static ssize_t funnel_ctrl_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
+								struct device_attribute *attr, char *buf)
 {
 	u32 val;
 	struct funnel_drvdata *drvdata = dev_get_drvdata(dev->parent);
@@ -176,10 +177,11 @@ static int funnel_probe(struct amba_device *adev, const struct amba_id *id)
 	struct coresight_platform_data *pdata = NULL;
 	struct funnel_drvdata *drvdata;
 	struct resource *res = &adev->res;
-	struct coresight_desc desc = { 0 };
+	struct coresight_desc desc = {0};
 	struct device_node *np = adev->dev.of_node;
 
-	if (np) {
+	if (np)
+	{
 		pdata = of_get_coresight_platform_data(dev, np);
 		if (IS_ERR(pdata))
 			return PTR_ERR(pdata);
@@ -192,7 +194,8 @@ static int funnel_probe(struct amba_device *adev, const struct amba_id *id)
 
 	drvdata->dev = &adev->dev;
 	drvdata->atclk = devm_clk_get(&adev->dev, "atclk"); /* optional */
-	if (!IS_ERR(drvdata->atclk)) {
+	if (!IS_ERR(drvdata->atclk))
+	{
 		ret = clk_prepare_enable(drvdata->atclk);
 		if (ret)
 			return ret;
@@ -243,30 +246,29 @@ static int funnel_runtime_resume(struct device *dev)
 #endif
 
 static const struct dev_pm_ops funnel_dev_pm_ops = {
-	SET_RUNTIME_PM_OPS(funnel_runtime_suspend, funnel_runtime_resume, NULL)
-};
+	SET_RUNTIME_PM_OPS(funnel_runtime_suspend, funnel_runtime_resume, NULL)};
 
 static const struct amba_id funnel_ids[] = {
 	{
-		.id     = 0x0003b908,
-		.mask   = 0x0003ffff,
+		.id = 0x0003b908,
+		.mask = 0x0003ffff,
 	},
 	{
 		/* Coresight SoC-600 */
-		.id     = 0x000bb9eb,
-		.mask   = 0x000fffff,
+		.id = 0x000bb9eb,
+		.mask = 0x000fffff,
 	},
-	{ 0, 0},
+	{0, 0},
 };
 
 static struct amba_driver funnel_driver = {
 	.drv = {
-		.name	= "coresight-funnel",
-		.owner	= THIS_MODULE,
-		.pm	= &funnel_dev_pm_ops,
+		.name = "coresight-funnel",
+		.owner = THIS_MODULE,
+		.pm = &funnel_dev_pm_ops,
 		.suppress_bind_attrs = true,
 	},
-	.probe		= funnel_probe,
-	.id_table	= funnel_ids,
+	.probe = funnel_probe,
+	.id_table = funnel_ids,
 };
 builtin_amba_driver(funnel_driver);
