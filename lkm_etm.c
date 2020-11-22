@@ -24,8 +24,6 @@ MODULE_VERSION("0.01");
 
 struct memory_mapped_address
 {
-    // void __iomem *a72_funnel_base_addr;
-    // void __iomem *main_funnel_base_addr;
     struct funnel_drvdata a72_funnel_base_addr;
     struct funnel_drvdata main_funnel_base_addr;
 } _default_addresses;
