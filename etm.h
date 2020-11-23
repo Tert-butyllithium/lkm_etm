@@ -390,6 +390,7 @@ static void etm4_enable_hw(void *info)
                 "timeout while waiting for Idle Trace Status\n");
 
     writel_relaxed(config->pe_sel, drvdata->base + TRCPROCSELR);
+    // val | 0x17
     writel_relaxed(config->cfg, drvdata->base + TRCCONFIGR);
     /* nothing specific implemented */
     writel_relaxed(0x0, drvdata->base + TRCAUXCTLR);
@@ -397,10 +398,14 @@ static void etm4_enable_hw(void *info)
     writel_relaxed(config->eventctrl1, drvdata->base + TRCEVENTCTL1R);
     writel_relaxed(config->stall_ctrl, drvdata->base + TRCSTALLCTLR);
     writel_relaxed(config->ts_ctrl, drvdata->base + TRCTSCTLR);
+    // 0x8
     writel_relaxed(config->syncfreq, drvdata->base + TRCSYNCPR);
+    // 0x100
     writel_relaxed(config->ccctlr, drvdata->base + TRCCCCTLR);
     writel_relaxed(config->bb_ctrl, drvdata->base + TRCBBCTLR);
+    //  ????  traceid: (CORESIGHT_ETM_PMU_SEED + (CPU_NUMBER * 2)): 0x10 + 0*2
     writel_relaxed(drvdata->trcid, drvdata->base + TRCTRACEIDR);
+    // vinst_ctrl
     writel_relaxed(config->vinst_ctrl, drvdata->base + TRCVICTLR);
     writel_relaxed(config->viiectlr, drvdata->base + TRCVIIECTLR);
     writel_relaxed(config->vissctlr,
@@ -437,6 +442,7 @@ static void etm4_enable_hw(void *info)
         writel_relaxed(config->ss_pe_cmp[i],
                        drvdata->base + TRCSSPCICRn(i));
     }
+    // start and stop
     for (i = 0; i < drvdata->nr_addr_cmp; i++)
     {
         writeq_relaxed(config->addr_val[i],
@@ -462,6 +468,7 @@ static void etm4_enable_hw(void *info)
 	 */
     writel_relaxed(readl_relaxed(drvdata->base + TRCPDCR) | TRCPDCR_PU,
                    drvdata->base + TRCPDCR);
+    writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPDSR);
 
     /* Enable the trace unit */
     writel_relaxed(1, drvdata->base + TRCPRGCTLR);

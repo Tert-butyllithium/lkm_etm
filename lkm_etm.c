@@ -3,6 +3,7 @@
 #include <linux/kernel.h>
 #include <asm/io.h>
 #include <linux/slab.h>
+#include <linux/device.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Huana Liu");

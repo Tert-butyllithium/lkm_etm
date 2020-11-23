@@ -1,5 +1,6 @@
 #ifndef _ETF_LANRAN_H
 #define _ETF_LANRAN_H
+#define _ETF_RETRIEVED_IMPLEMENTED_LANRAN
 #include <linux/slab.h>
 #include <asm/io.h>
 #include <linux/device.h>
@@ -114,5 +115,18 @@ static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
 
     CS_LOCK(drvdata->base);
 }
+
+#ifdef _ETF_RETRIEVED_IMPLEMENTED_LANRAN
+static void tmc_eft_retrieve(struct tmc_drvdata *drvdata, void __iomem *saved_buffer)
+{
+    u32 reg;
+    reg = readl_relaxed(drvdata->base + 0x10);
+#ifdef _DEBUG_LANRAN
+    printk(KERN_INFO "[" DRVR_NAME "]"
+                     "RRD: 0x%x",
+           reg);
+#endif
+}
+#endif
 
 #endif
