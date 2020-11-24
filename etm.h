@@ -176,7 +176,7 @@
 // static int etm4_set_event_filters(struct etmv4_drvdata *drvdata,
 //                                   struct perf_event *event);
 
-static enum cpuhp_state hp_online;
+// static enum cpuhp_state hp_online;
 
 /**
  * struct etmv4_config - configuration information related to an ETMv4

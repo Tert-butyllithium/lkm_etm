@@ -128,13 +128,13 @@ const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
 static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
 {
     u32 reg, status, buffer_len = 0;
-    int i, readtimes;
+    int i, readtimes = 0;
     mm_segment_t old_fs;
-    struct file *file;
+    struct file *file = NULL;
     bool lost = false;
     const u32 *barrier = barrier_pkt;
 
-    // reg = readl_relaxed(drvdata->base + 0x10);
+    reg = readl_relaxed(drvdata->base + 0x10);
 #ifdef _DEBUG_LANRAN
     printk(KERN_INFO "[" DRVR_NAME "]"
                      "RRD: 0x%x",
