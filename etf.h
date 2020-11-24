@@ -74,7 +74,7 @@ void tmc_disable_hw(struct tmc_drvdata *drvdata)
 
 void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
 {
-    u32 ffcr;
+    u32 ffcr, reg;
 
     ffcr = readl_relaxed(drvdata->base + TMC_FFCR);
     ffcr |= TMC_FFCR_STOP_ON_FLUSH;
@@ -89,6 +89,13 @@ void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
                 "timeout while waiting for completion of Manual Flush\n");
     }
 
+    //Check if formatter stopped
+    reg = readl_relaxed(drvdata->base + TMC_FFSR);
+    while ((reg & 0x2) != 0x2)
+    {
+        reg = readl_relaxed(drvdata->base + TMC_FFSR);
+    }
+
     tmc_wait_for_tmcready(drvdata);
 }
 
@@ -100,9 +107,11 @@ static void tmc_etf_enable_hw(struct tmc_drvdata *drvdata)
     tmc_wait_for_tmcready(drvdata);
 
     writel_relaxed(TMC_MODE_HARDWARE_FIFO, drvdata->base + TMC_MODE);
-    writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
-                   drvdata->base + TMC_FFCR);
+    // writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
+    //                drvdata->base + TMC_FFCR);
+    writel_relaxed(0x133, drvdata->base + TMC_FFCR);
     writel_relaxed(0x0, drvdata->base + TMC_BUFWM);
+    writel_relaxed(0x800, drvdata->base + 0x01c);
     tmc_enable_hw(drvdata);
 
     CS_LOCK(drvdata->base);

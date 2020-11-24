@@ -57,7 +57,7 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
     _default_addresses.etm_drvdata.trcid = 0x10;
     _default_addresses.etm_drvdata.config.addr_acc[0] = 0x5000;
-    _default_addresses.etm_drvdata.config.addr_val[1] = ~0x0;
+    _default_addresses.etm_drvdata.config.addr_val[1] = 0xffffffff;
     _default_addresses.etm_drvdata.config.addr_acc[1] = 0x5000;
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
 }

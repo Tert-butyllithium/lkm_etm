@@ -344,7 +344,7 @@ static void etm4_os_unlock(struct etmv4_drvdata *drvdata)
 
 static void etm4_disable_hw(void *info)
 {
-    u32 control;
+    u32 control, reg;
     struct etmv4_drvdata *drvdata = (struct etmv4_drvdata *)info;
 
     CS_UNLOCK(drvdata->base);
@@ -363,6 +363,13 @@ static void etm4_disable_hw(void *info)
     mb();
     isb();
     writel_relaxed(control, drvdata->base + TRCPRGCTLR);
+
+    reg = readl_relaxed(etm_oracle.etm_base + 0x00C);
+    while ((reg & 0x1) != 0x1)
+    {
+        printk(KERN_INFO "[ETM:] Waiting for disable to be idle state\n");
+        reg = readl_relaxed(etm_oracle.etm_base + 0x00C);
+    }
 
     CS_LOCK(drvdata->base);
 
@@ -467,9 +474,9 @@ static void etm4_enable_hw(void *info)
     writel_relaxed(readl_relaxed(drvdata->base + TRCPDCR) | TRCPDCR_PU,
                    drvdata->base + TRCPDCR);
     // writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPDSR);
-
+    readl_relaxed(drvdata->base + TRCPDSR);
     /* Enable the trace unit */
-    writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPRGCTLR);
+    writel_relaxed(0x1, drvdata->base + TRCPRGCTLR);
 
     /* wait for TRCSTATR.IDLE to go back down to '0' */
     if (coresight_timeout(drvdata->base, TRCSTATR, TRCSTATR_IDLE_BIT, 0))
