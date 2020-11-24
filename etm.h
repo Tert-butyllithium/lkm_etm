@@ -16,8 +16,6 @@
 #include <linux/stat.h>
 #include <linux/clk.h>
 #include <linux/cpu.h>
-#include <linux/coresight.h>
-#include <linux/coresight-pmu.h>
 #include <linux/pm_wakeup.h>
 #include <linux/amba/bus.h>
 #include <linux/seq_file.h>
@@ -174,9 +172,9 @@ static int boot_enable;
 /* The number of ETMv4 currently registered */
 static int etm4_count;
 static struct etmv4_drvdata *etmdrvdata[NR_CPUS];
-static void etm4_set_default_config(struct etmv4_config *config);
-static int etm4_set_event_filters(struct etmv4_drvdata *drvdata,
-                                  struct perf_event *event);
+// static void etm4_set_default_config(struct etmv4_config *config);
+// static int etm4_set_event_filters(struct etmv4_drvdata *drvdata,
+//                                   struct perf_event *event);
 
 static enum cpuhp_state hp_online;
 

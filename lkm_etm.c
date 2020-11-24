@@ -65,6 +65,7 @@ static int __init lkm_example_init(void)
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
     tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
+    init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
     return 0;
 }
