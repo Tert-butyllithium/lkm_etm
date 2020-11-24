@@ -106,7 +106,7 @@ static void tmc_etf_enable_hw(struct tmc_drvdata *drvdata)
     /* Wait for TMCSReady bit to be set */
     tmc_wait_for_tmcready(drvdata);
 
-    writel_relaxed(TMC_MODE_CIRCULAR_BUFFER, drvdata->base + TMC_MODE);
+    writel_relaxed(TMC_MODE_SOFTWARE_FIFO, drvdata->base + TMC_MODE);
     // writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
     //                drvdata->base + TMC_FFCR);
     writel_relaxed(0x133, drvdata->base + TMC_FFCR);

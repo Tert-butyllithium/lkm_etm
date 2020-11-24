@@ -373,7 +373,7 @@ static void etm4_disable_hw(void *info)
 
     CS_LOCK(drvdata->base);
 
-    printk(KERN_INFO "[" DRVR_NAME "]", "cpu: %d disable smp call done\n", drvdata->cpu);
+    dev_info(NULL, "cpu: %d disable smp call done\n", drvdata->cpu);
 }
 
 static void etm4_enable_hw(void *info)
@@ -485,9 +485,7 @@ static void etm4_enable_hw(void *info)
 
     CS_LOCK(drvdata->base);
 
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "cpu: %d enable smp call done\n",
-           drvdata->cpu);
+    dev_info(NULL, "cpu: %d enable smp call done\n", drvdata->cpu);
 }
 
 #endif
