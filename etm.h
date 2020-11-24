@@ -466,10 +466,10 @@ static void etm4_enable_hw(void *info)
 	 */
     writel_relaxed(readl_relaxed(drvdata->base + TRCPDCR) | TRCPDCR_PU,
                    drvdata->base + TRCPDCR);
-    writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPDSR);
+    // writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPDSR);
 
     /* Enable the trace unit */
-    writel_relaxed(1, drvdata->base + TRCPRGCTLR);
+    writel_relaxed(readl_relaxed(drvdata->base + TRCPDSR) | 0x1, drvdata->base + TRCPRGCTLR);
 
     /* wait for TRCSTATR.IDLE to go back down to '0' */
     if (coresight_timeout(drvdata->base, TRCSTATR, TRCSTATR_IDLE_BIT, 0))
