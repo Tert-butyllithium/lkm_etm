@@ -4,6 +4,8 @@
 #include <linux/slab.h>
 #include <asm/io.h>
 #include <linux/device.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
 
 #include "coresight.h"
 
@@ -117,15 +119,66 @@ static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
 }
 
 #ifdef _ETF_RETRIEVED_IMPLEMENTED_LANRAN
-static void tmc_eft_retrieve(struct tmc_drvdata *drvdata, void __iomem *saved_buffer)
+#define BUF_SIZE 0x10000
+#define ETB_STATUS_REG 0x00c
+#define MY_FILE "/sdcard/Download/trace_result"
+
+char buffer[BUF_SIZE + 1];
+const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
+static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
 {
-    u32 reg;
-    reg = readl_relaxed(drvdata->base + 0x10);
+    u32 reg, status, buffer_len = 0;
+    int i, readtimes;
+    mm_segment_t old_fs;
+    struct file *file;
+    bool lost = false;
+    const u32 *barrier = barrier_pkt;
+
+    // reg = readl_relaxed(drvdata->base + 0x10);
 #ifdef _DEBUG_LANRAN
     printk(KERN_INFO "[" DRVR_NAME "]"
                      "RRD: 0x%x",
            reg);
 #endif
+    memset(buffer, 0, sizeof buffer);
+    status = readl_relaxed(drvdata->base + ETB_STATUS_REG);
+    if ((status & 0x1) == 0x1)
+    {
+        printk("[ETM:] etf buffer is full\n");
+        lost = true;
+    }
+    for (i = 0; i < BUF_SIZE; i += 4)
+    {
+        reg = readl_relaxed(drvdata->base + 0x10);
+        readtimes++;
+        if (reg == 0xffffffff)
+        {
+            break;
+        }
+        if (lost && *barrier)
+        {
+            reg = *barrier;
+            barrier++;
+        }
+        memcpy(buffer + i, &reg, 4);
+        buffer_len += 4;
+    }
+    printk(KERN_INFO "[ETM:] read to tracebuf from etf total %d times.\n", readtimes);
+
+    if (file == NULL)
+        file = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
+    if (IS_ERR(file))
+    {
+        printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", MY_FILE);
+        return;
+    }
+    old_fs = get_fs();
+    set_fs(KERNEL_DS);
+    file->f_op->write(file, (char *)buffer, buffer_len, &file->f_pos);
+    set_fs(old_fs);
+    filp_close(file, NULL);
+
+    return;
 }
 #endif
 

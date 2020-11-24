@@ -167,11 +167,11 @@
 #define TRCOSLAR 0x300
 #define TRCSTATR_IDLE_BIT 0
 
-static int boot_enable;
+// static int boot_enable;
 
 /* The number of ETMv4 currently registered */
-static int etm4_count;
-static struct etmv4_drvdata *etmdrvdata[NR_CPUS];
+// static int etm4_count;
+// static struct etmv4_drvdata *etmdrvdata[NR_CPUS];
 // static void etm4_set_default_config(struct etmv4_config *config);
 // static int etm4_set_event_filters(struct etmv4_drvdata *drvdata,
 //                                   struct perf_event *event);

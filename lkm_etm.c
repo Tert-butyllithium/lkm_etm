@@ -74,8 +74,11 @@ static void __exit lkm_example_exit(void)
 {
     funnel_disable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
+
+    tmc_eft_retrieve(&_default_addresses.tmc_drvdata);
     tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
     etm4_disable_hw(&_default_addresses.etm_drvdata);
+
     unmap_address();
 }
 module_init(lkm_example_init);
