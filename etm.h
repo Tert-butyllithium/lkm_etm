@@ -364,11 +364,11 @@ static void etm4_disable_hw(void *info)
     isb();
     writel_relaxed(control, drvdata->base + TRCPRGCTLR);
 
-    reg = readl_relaxed(etm_oracle.etm_base + 0x00C);
+    reg = readl_relaxed(drvdata->base + 0x00C);
     while ((reg & 0x1) != 0x1)
     {
         printk(KERN_INFO "[ETM:] Waiting for disable to be idle state\n");
-        reg = readl_relaxed(etm_oracle.etm_base + 0x00C);
+        reg = readl_relaxed(drvdata->base + 0x00C);
     }
 
     CS_LOCK(drvdata->base);
