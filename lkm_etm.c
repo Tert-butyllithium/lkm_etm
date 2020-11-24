@@ -55,8 +55,11 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.cfg = 0x17;
     _default_addresses.etm_drvdata.config.syncfreq = 0x8;
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
+    _default_addresses.etm_drvdata.trcid = 0x10;
+    _default_addresses.etm_drvdata.config.addr_acc[0] = 0x5000;
+    _default_addresses.etm_drvdata.config.addr_val[1] = ~0x0;
     _default_addresses.etm_drvdata.config.addr_acc[1] = 0x5000;
-    _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf201;
+    _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
 }
 
 static int __init lkm_etm_init(void)
