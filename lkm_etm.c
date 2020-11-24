@@ -56,7 +56,7 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.syncfreq = 0x8;
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
     _default_addresses.etm_drvdata.config.addr_acc[1] = 0x5000;
-    _default_addresses.etm_drvdata.config.vinst_ctrl = 983553;
+    _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf201;
 }
 
 static int __init lkm_example_init(void)
@@ -72,12 +72,13 @@ static int __init lkm_example_init(void)
 
 static void __exit lkm_example_exit(void)
 {
+
+    etm4_disable_hw(&_default_addresses.etm_drvdata);
+    tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
+    tmc_eft_retrieve(&_default_addresses.tmc_drvdata);
+
     funnel_disable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
-
-    tmc_eft_retrieve(&_default_addresses.tmc_drvdata);
-    tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
-    etm4_disable_hw(&_default_addresses.etm_drvdata);
 
     unmap_address();
 }
