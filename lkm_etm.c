@@ -59,7 +59,7 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf201;
 }
 
-static int __init lkm_example_init(void)
+static int __init lkm_etm_init(void)
 {
     map_addresses();
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
@@ -70,7 +70,7 @@ static int __init lkm_example_init(void)
     return 0;
 }
 
-static void __exit lkm_example_exit(void)
+static void __exit lkm_etm_exit(void)
 {
 
     etm4_disable_hw(&_default_addresses.etm_drvdata);
@@ -82,5 +82,5 @@ static void __exit lkm_example_exit(void)
 
     unmap_address();
 }
-module_init(lkm_example_init);
-module_exit(lkm_example_exit);
+module_init(lkm_etm_init);
+module_exit(lkm_etm_exit);
