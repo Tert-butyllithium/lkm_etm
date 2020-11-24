@@ -5,6 +5,8 @@
 #include <linux/slab.h>
 #include <asm/io.h>
 
+#include "coresight.h"
+
 #define CORESIGHT_UNLOCK 0xc5acce55
 #define CORESIGHT_LAR 0xfb0
 
@@ -27,26 +29,6 @@ struct funnel_drvdata
 #ifdef _DEBUG_LANRAN
 u32 __tmp;
 #endif
-
-static inline void CS_UNLOCK(void __iomem *addr)
-{
-    do
-    {
-        writel_relaxed(CORESIGHT_UNLOCK, addr + CORESIGHT_LAR);
-        /* Make sure everyone has seen this */
-        mb();
-    } while (0);
-}
-
-static inline void CS_LOCK(void __iomem *addr)
-{
-    do
-    {
-        /* Wait for things to settle */
-        mb();
-        writel_relaxed(0x0, addr + CORESIGHT_LAR);
-    } while (0);
-}
 
 static void funnel_enable_hw(struct funnel_drvdata *drvdata, int port)
 {
