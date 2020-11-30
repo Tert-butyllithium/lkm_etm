@@ -64,7 +64,8 @@ void tmc_wait_for_tmcready(struct tmc_drvdata *drvdata)
 
 void tmc_enable_hw(struct tmc_drvdata *drvdata)
 {
-    writel_relaxed(TMC_CTL_CAPT_EN, drvdata->base + TMC_CTL);
+    // change to 0x1
+    writel_relaxed(0x1, drvdata->base + TMC_CTL);
 }
 
 void tmc_disable_hw(struct tmc_drvdata *drvdata)
@@ -106,10 +107,9 @@ static void tmc_etf_enable_hw(struct tmc_drvdata *drvdata)
     /* Wait for TMCSReady bit to be set */
     tmc_wait_for_tmcready(drvdata);
 
-    writel_relaxed(TMC_MODE_SOFTWARE_FIFO, drvdata->base + TMC_MODE);
-    // writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
-    //                drvdata->base + TMC_FFCR);
-    writel_relaxed(0x133, drvdata->base + TMC_FFCR);
+    writel_relaxed(TMC_MODE_CIRCULAR_BUFFER, drvdata->base + TMC_MODE);
+    writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
+                   drvdata->base + TMC_FFCR);
     writel_relaxed(0x0, drvdata->base + TMC_BUFWM);
     writel_relaxed(0x800, drvdata->base + 0x01c);
     tmc_enable_hw(drvdata);
