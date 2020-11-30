@@ -70,12 +70,8 @@ static int __init lkm_etm_init(void)
     tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
     init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
-    return 0;
-}
 
-static void __exit lkm_etm_exit(void)
-{
-
+    // -------------
     etm4_disable_hw(&_default_addresses.etm_drvdata);
     tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
     tmc_eft_retrieve(&_default_addresses.tmc_drvdata);
@@ -84,6 +80,12 @@ static void __exit lkm_etm_exit(void)
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
 
     unmap_address();
+    return 0;
+}
+
+static void __exit lkm_etm_exit(void)
+{
+
 }
 module_init(lkm_etm_init);
 module_exit(lkm_etm_exit);

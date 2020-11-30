@@ -132,7 +132,7 @@ static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
 #define ETB_STATUS_REG 0x00c
 #define MY_FILE "/sdcard/Download/trace_result"
 
-char buffer[BUF_SIZE + 1];
+char buffer[BUF_SIZE + 10];
 const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
 static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
 {
@@ -149,7 +149,7 @@ static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
                      "RRD: 0x%x",
            reg);
 #endif
-    memset(buffer, 0, sizeof buffer);
+    memset(buffer, 0, BUF_SIZE);
     status = readl_relaxed(drvdata->base + ETB_STATUS_REG);
     if ((status & 0x1) == 0x1)
     {
@@ -186,6 +186,7 @@ static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
     file->f_op->write(file, (char *)buffer, buffer_len, &file->f_pos);
     set_fs(old_fs);
     filp_close(file, NULL);
+    file = NULL;
 
     return;
 }
