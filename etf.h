@@ -70,12 +70,26 @@ void tmc_enable_hw(struct tmc_drvdata *drvdata)
 
 void tmc_disable_hw(struct tmc_drvdata *drvdata)
 {
+    u32 reg;
     writel_relaxed(0x0, drvdata->base + TMC_CTL);
+
+    //Check if formatter stopped
+    reg = readl_relaxed(drvdata->base + TMC_FFSR);
+    while ((reg & 0x2) != 0x2)
+    {
+        reg = readl_relaxed(drvdata->base + TMC_FFSR);
+    }
 }
 
 void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
 {
-    u32 ffcr, reg;
+    u32 ffcr;
+
+    ffcr = readl_relaxed(drvdata->base + TMC_FFCR);
+    ffcr |= 0x2000;
+    writel_relaxed(ffcr, drvdata->base + TMC_FFCR);
+    ffcr |= 0x300;
+    writel_relaxed(ffcr, drvdata->base + TMC_FFCR);
 
     ffcr = readl_relaxed(drvdata->base + TMC_FFCR);
     ffcr |= TMC_FFCR_STOP_ON_FLUSH;
@@ -88,13 +102,6 @@ void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
     {
         dev_err(drvdata->dev,
                 "timeout while waiting for completion of Manual Flush\n");
-    }
-
-    //Check if formatter stopped
-    reg = readl_relaxed(drvdata->base + TMC_FFSR);
-    while ((reg & 0x2) != 0x2)
-    {
-        reg = readl_relaxed(drvdata->base + TMC_FFSR);
     }
 
     tmc_wait_for_tmcready(drvdata);
