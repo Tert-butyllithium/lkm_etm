@@ -73,9 +73,9 @@ static int __init lkm_etm_init(void)
     map_addresses();
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
-    tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
     init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
+    tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
 
     // do something
     smp_call_function_single(0, &gao, NULL, 1);

@@ -351,7 +351,7 @@ static void etm4_disable_hw(void *info)
 
     /* power can be removed from the trace unit now */
     control = readl_relaxed(drvdata->base + TRCPDCR);
-    control &= ~TRCPDCR_PU;
+    control &= 0xfffffff7;
     writel_relaxed(control, drvdata->base + TRCPDCR);
 
     control = readl_relaxed(drvdata->base + TRCPRGCTLR);
