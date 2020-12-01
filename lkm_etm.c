@@ -24,6 +24,12 @@ MODULE_VERSION("0.01");
 #include "etf.h"
 #include "etm.h"
 
+static void gao(void *args)
+{
+    char *mem = kmalloc(10, GFP_KERNEL);
+    kfree(mem);
+}
+
 // uint32_t CSTF_OLD = 0x300;
 
 struct memory_mapped_address
@@ -71,6 +77,9 @@ static int __init lkm_etm_init(void)
     init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
 
+    // do something
+    smp_call_function_single(0, &gao, NULL, 1);
+
     // -------------
     etm4_disable_hw(&_default_addresses.etm_drvdata);
     tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
@@ -85,7 +94,6 @@ static int __init lkm_etm_init(void)
 
 static void __exit lkm_etm_exit(void)
 {
-
 }
 module_init(lkm_etm_init);
 module_exit(lkm_etm_exit);

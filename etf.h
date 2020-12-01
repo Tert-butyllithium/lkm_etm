@@ -78,18 +78,13 @@ void tmc_disable_hw(struct tmc_drvdata *drvdata)
     while ((reg & 0x2) != 0x2)
     {
         reg = readl_relaxed(drvdata->base + TMC_FFSR);
+        printk("[ETM:]: stopping FFSR....");
     }
 }
 
 void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
 {
     u32 ffcr;
-
-    ffcr = readl_relaxed(drvdata->base + TMC_FFCR);
-    ffcr |= 0x2000;
-    writel_relaxed(ffcr, drvdata->base + TMC_FFCR);
-    ffcr |= 0x300;
-    writel_relaxed(ffcr, drvdata->base + TMC_FFCR);
 
     ffcr = readl_relaxed(drvdata->base + TMC_FFCR);
     ffcr |= TMC_FFCR_STOP_ON_FLUSH;
