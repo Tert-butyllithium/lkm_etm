@@ -4,6 +4,7 @@
 #include <asm/io.h>
 #include <linux/slab.h>
 #include <linux/device.h>
+#include <linux/fs.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Huana Liu");
@@ -68,14 +69,40 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
 }
 
+char buffer[1024];
+static void check_mem(void __iomem *base, char *path)
+{
+    mm_segment_t old_fs;
+    int i = 0;
+    struct file *file = filp_open(path, O_RDWR | O_APPEND | O_CREAT, 0644);
+    if (IS_ERR(file))
+    {
+        printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", path);
+        return;
+    }
+    old_fs = get_fs();
+    set_fs(KERNEL_DS);
+    for (; i < 1024; i += 4)
+    {
+        sprintf(buffer, "address 0x%x: 0x%x\n", i, ioread32(base + i));
+        file->f_op->write(file, (char *)buffer, strlen(buffer), &file->f_pos);
+    }
+
+    set_fs(old_fs);
+    filp_close(file, NULL);
+    file = NULL;
+}
+
 static int __init lkm_etm_init(void)
 {
     map_addresses();
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
+    tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
     init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
-    tmc_etf_enable_hw(&_default_addresses.tmc_drvdata);
+
+    check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
 
     // do something
     smp_call_function_single(0, &gao, NULL, 1);
