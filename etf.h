@@ -134,48 +134,61 @@ static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
 #define ETB_STATUS_REG 0x00c
 #define MY_FILE "/sdcard/Download/trace_result"
 
-char buffer[BUF_SIZE + 10];
-const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
 static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
 {
-    u32 reg, status, buffer_len = 0;
-    int i, readtimes = 0;
-    mm_segment_t old_fs;
-    struct file *file = NULL;
+    static const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
+    void __iomem *readbuff;
+    unsigned int reg, status;
     bool lost = false;
-    const u32 *barrier = barrier_pkt;
+    const unsigned int *barrier = barrier_pkt;
+    static char tracebuf[BUF_SIZE + 10];
+    static struct file *file = NULL;
 
-    reg = readl_relaxed(drvdata->base + 0x10);
-#ifdef _DEBUG_LANRAN
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "RRD: 0x%x",
-           reg);
-#endif
-    memset(buffer, 0, BUF_SIZE);
-    status = readl_relaxed(drvdata->base + ETB_STATUS_REG);
+    //clean up the trace buffer
+    memset(tracebuf, 0, BUF_SIZE);
+    char *bufp = tracebuf;
+
+    unsigned int bufferlen = 0;
+    int i;
+    /*
+	 * Get a hold of the status register and see if a wrap around
+	 * has occurred.
+	 */
+    status = ioread32(drvdata->base + 0x00c);
     if ((status & 0x1) == 0x1)
     {
         printk("[ETM:] etf buffer is full\n");
         lost = true;
     }
-    for (i = 0; i < BUF_SIZE; i += 4)
+
+    // get the etf buffer
+    readbuff = (void *)(drvdata->base + 0x010);
+
+    int readtimes = 0;
+
+    int memwidth = BUF_SIZE / 4;
+    // printk("[ETM: ] RRD: 0x%x", reg);
+    for (i = 0; i < memwidth; i++)
     {
-        reg = readl_relaxed(drvdata->base + 0x10);
+        reg = ioread32(readbuff);
         readtimes++;
-        if (reg == 0xffffffff)
-        {
+
+        if (reg == 0xFFFFFFFF)
             break;
-        }
+
         if (lost && *barrier)
         {
             reg = *barrier;
             barrier++;
         }
-        memcpy(buffer + i, &reg, 4);
-        buffer_len += 4;
+        memcpy(bufp, &reg, 4);
+        bufp += 4;
+        bufferlen += 4;
     }
-    printk(KERN_INFO "[ETM:] read to tracebuf from etf total %d times.\n", readtimes);
 
+    printk(KERN_INFO "[ETM:] read to tracebuf from etf total %d times.\n", readtimes);
+    //write tracebuf to file
+    mm_segment_t old_fs;
     if (file == NULL)
         file = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
     if (IS_ERR(file))
@@ -185,13 +198,19 @@ static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
     }
     old_fs = get_fs();
     set_fs(KERNEL_DS);
-    file->f_op->write(file, (char *)buffer, buffer_len, &file->f_pos);
+    file->f_op->write(file, (char *)tracebuf, bufferlen, &file->f_pos);
     set_fs(old_fs);
     filp_close(file, NULL);
     file = NULL;
 
+    //disable trace
+    reg = ioread32(drvdata->base + TMC_CTL);
+    reg &= 0x0;
+    iowrite32(reg, drvdata->base + TMC_CTL);
+
     return;
 }
+
 #endif
 
 #endif
