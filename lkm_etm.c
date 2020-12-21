@@ -28,11 +28,11 @@ module_param(pid,int,0644);
 #include "etf.h"
 #include "etm.h"
 
-static void gao(void *args)
-{
-    char *mem = kmalloc(10, GFP_KERNEL);
-    kfree(mem);
-}
+// static void gao(void *args)
+// {
+//     char *mem = kmalloc(10, GFP_KERNEL);
+//     kfree(mem);
+// }
 
 // uint32_t CSTF_OLD = 0x300;
 
@@ -84,7 +84,7 @@ static int __init lkm_etm_init(void)
     init_config();
     etm4_enable_hw(&_default_addresses.etm_drvdata);
 
-    check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
+    // check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
 
     return 0;
 }
