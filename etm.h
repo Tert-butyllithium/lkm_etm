@@ -396,15 +396,15 @@ static void etm4_enable_hw(void *info)
 
     writel_relaxed(config->pe_sel, drvdata->base + TRCPROCSELR);
     // val | 0x17
-    // writel_relaxed(config->cfg, drvdata->base + TRCCONFIGR);
-    writel_relaxed(readl_relaxed(drvdata->base + TRCCONFIGR) | 0x17, drvdata->base + TRCCONFIGR);
+    writel_relaxed(config->cfg, drvdata->base + TRCCONFIGR);
+    // writel_relaxed(readl_relaxed(drvdata->base + TRCCONFIGR) | 0x17, drvdata->base + TRCCONFIGR);
     /* nothing specific implemented */
     writel_relaxed(0x0, drvdata->base + TRCAUXCTLR);
     writel_relaxed(config->eventctrl0, drvdata->base + TRCEVENTCTL0R);
     writel_relaxed(config->eventctrl1, drvdata->base + TRCEVENTCTL1R);
     writel_relaxed(config->stall_ctrl, drvdata->base + TRCSTALLCTLR);
     writel_relaxed(config->ts_ctrl, drvdata->base + TRCTSCTLR);
-    // 0x8
+    
     writel_relaxed(config->syncfreq, drvdata->base + TRCSYNCPR);
     // 0x100
     writel_relaxed(config->ccctlr, drvdata->base + TRCCCCTLR);

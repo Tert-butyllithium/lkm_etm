@@ -11,6 +11,9 @@ MODULE_AUTHOR("Huana Liu");
 MODULE_DESCRIPTION("A Linux kenrel module for tracing using ETM");
 MODULE_VERSION("0.01");
 
+static int pid = 10;
+module_param(pid,int,0644);
+
 #define DRVR_NAME "test_etm_register"
 #define BASE_ETM_ADDR 0x22040000
 #define BASE_PMU_ADDR 0x22030000
@@ -60,37 +63,16 @@ void unmap_address(void)
 void init_config(void)
 {
     _default_addresses.etm_drvdata.config.cfg = 0x17;
-    _default_addresses.etm_drvdata.config.syncfreq = 0x8;
+    _default_addresses.etm_drvdata.config.syncfreq = 0xC;
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
     _default_addresses.etm_drvdata.trcid = 0x10;
-    _default_addresses.etm_drvdata.config.addr_acc[0] = 0x5000;
-    _default_addresses.etm_drvdata.config.addr_val[1] = 0xffffffff;
-    _default_addresses.etm_drvdata.config.addr_acc[1] = 0x5000;
+    _default_addresses.etm_drvdata.config.addr_val[1] = 0x0;
+    _default_addresses.etm_drvdata.config.addr_acc[0] = 0x6B04;
+    _default_addresses.etm_drvdata.config.addr_val[1] = ~0x0;
+    _default_addresses.etm_drvdata.config.addr_acc[1] = 0x6B04;
+    // process id
+    _default_addresses.etm_drvdata.config.ctxid_pid[0] = pid;
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
-}
-
-char buffer[1024];
-static void check_mem(void __iomem *base, char *path)
-{
-    mm_segment_t old_fs;
-    int i = 0;
-    struct file *file = filp_open(path, O_RDWR | O_APPEND | O_CREAT, 0644);
-    if (IS_ERR(file))
-    {
-        printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", path);
-        return;
-    }
-    old_fs = get_fs();
-    set_fs(KERNEL_DS);
-    for (; i < 1024; i += 4)
-    {
-        sprintf(buffer, "address 0x%x: 0x%x\n", i, ioread32(base + i));
-        file->f_op->write(file, (char *)buffer, strlen(buffer), &file->f_pos);
-    }
-
-    set_fs(old_fs);
-    filp_close(file, NULL);
-    file = NULL;
 }
 
 static int __init lkm_etm_init(void)
@@ -104,10 +86,11 @@ static int __init lkm_etm_init(void)
 
     check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
 
-    // do something
-    smp_call_function_single(0, &gao, NULL, 1);
+    return 0;
+}
 
-    // -------------
+static void __exit lkm_etm_exit(void)
+{
     etm4_disable_hw(&_default_addresses.etm_drvdata);
     tmc_etf_disable_hw(&_default_addresses.tmc_drvdata);
     tmc_eft_retrieve(&_default_addresses.tmc_drvdata);
@@ -116,11 +99,6 @@ static int __init lkm_etm_init(void)
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
 
     unmap_address();
-    return 0;
-}
-
-static void __exit lkm_etm_exit(void)
-{
 }
 module_init(lkm_etm_init);
 module_exit(lkm_etm_exit);
