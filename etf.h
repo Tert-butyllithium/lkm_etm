@@ -132,7 +132,7 @@ static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
 #ifdef _ETF_RETRIEVED_IMPLEMENTED_LANRAN
 #define BUF_SIZE 0x10000
 #define ETB_STATUS_REG 0x00c
-#define MY_FILE "/sdcard/Download/trace_result"
+#define MY_FILE "~/trace_result/trace1.out"
 
 static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
 {
