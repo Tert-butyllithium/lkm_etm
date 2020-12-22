@@ -22,19 +22,12 @@ module_param(pid,int,0644);
 #define BASE_A72_FUNNEL_ADDR 0x220c0000
 
 #define ADDR_SIZE 1024
+#define BUF_SIZE 0x10001
 #define _DEBUG_LANRAN
 
 #include "funnel.h"
 #include "etf.h"
 #include "etm.h"
-
-// static void gao(void *args)
-// {
-//     char *mem = kmalloc(10, GFP_KERNEL);
-//     kfree(mem);
-// }
-
-// uint32_t CSTF_OLD = 0x300;
 
 struct memory_mapped_address
 {
@@ -65,23 +58,35 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.cfg = 0x17;
     _default_addresses.etm_drvdata.config.syncfreq = 0xC;
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
+    _default_addresses.etm_drvdata.config.viiectlr = 0x1;
     _default_addresses.etm_drvdata.trcid = 0x10;
-    _default_addresses.etm_drvdata.config.addr_val[1] = 0x0;
+    _default_addresses.etm_drvdata.config.addr_val[0] = 0x0;
     _default_addresses.etm_drvdata.config.addr_acc[0] = 0x6B04;
     _default_addresses.etm_drvdata.config.addr_val[1] = ~0x0;
     _default_addresses.etm_drvdata.config.addr_acc[1] = 0x6B04;
+    _default_addresses.etm_drvdata.nr_addr_cmp = 2;
+
     // process id
+    printk("[ETM:] pid: %u\n",pid);
     _default_addresses.etm_drvdata.config.ctxid_pid[0] = pid;
+    _default_addresses.etm_drvdata.numcidc = 1;
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
+
+    // etf relavant
+    _default_addresses.tmc_drvdata.trigger_cntr = 0x1000;
+    _default_addresses.tmc_drvdata.buf = kmalloc(BUF_SIZE,GFP_KERNEL);
+    _default_addresses.tmc_drvdata.memwidth = BUF_SIZE /4 ;
 }
 
 static int __init lkm_etm_init(void)
 {
     map_addresses();
+    init_config();
+
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
     tmc_etb_enable_hw(&_default_addresses.tmc_drvdata);
-    init_config();
+ 
     etm4_enable_hw(&_default_addresses.etm_drvdata);
     
 
@@ -99,6 +104,7 @@ static void __exit lkm_etm_exit(void)
     funnel_disable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
 
+    kfree(_default_addresses.tmc_drvdata.buf);
     unmap_address();
 }
 module_init(lkm_etm_init);

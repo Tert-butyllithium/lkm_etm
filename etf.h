@@ -56,6 +56,7 @@
 
 #define TMC_STS 0x00c
 #define TMC_STS_TMCREADY_BIT 2
+#define TMC_STS_FULL BIT(0)
 
 static const u32 barrier_pkt[] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x0};
 
@@ -78,6 +79,9 @@ struct tmc_drvdata
     void __iomem *base;
     struct device *dev;
     struct coresight_device *csdev;
+    char* buf;
+    u32 len;
+    u32 memwidth;
     u32 trigger_cntr;
 };
 
@@ -134,42 +138,42 @@ void tmc_flush_and_stop(struct tmc_drvdata *drvdata)
 
 
 
-// static void tmc_etb_dump_hw(struct tmc_drvdata *drvdata)
-// {
-// 	bool lost = false;
-// 	char *bufp;
-// 	const u32 *barrier;
-// 	u32 read_data, status;
-// 	int i;
+static void tmc_etb_dump_hw(struct tmc_drvdata *drvdata)
+{
+	bool lost = false;
+	char *bufp;
+	const u32 *barrier;
+	u32 read_data, status;
+	int i;
 
-// 	/*
-// 	 * Get a hold of the status register and see if a wrap around
-// 	 * has occurred.
-// 	 */
-// 	status = readl_relaxed(drvdata->base + TMC_STS);
-// 	if (status & TMC_STS_FULL)
-// 		lost = true;
+	/*
+	 * Get a hold of the status register and see if a wrap around
+	 * has occurred.
+	 */
+	status = readl_relaxed(drvdata->base + TMC_STS);
+	if (status & TMC_STS_FULL)
+		lost = true;
 
-// 	bufp = drvdata->buf;
-// 	drvdata->len = 0;
-// 	barrier = barrier_pkt;
-// 	while (1) {
-// 		for (i = 0; i < drvdata->memwidth; i++) {
-// 			read_data = readl_relaxed(drvdata->base + TMC_RRD);
-// 			if (read_data == 0xFFFFFFFF)
-// 				return;
+	bufp = drvdata->buf;
+	drvdata->len = 0;
+	barrier = barrier_pkt;
+	while (1) {
+		for (i = 0; i < drvdata->memwidth; i++) {
+			read_data = readl_relaxed(drvdata->base + TMC_RRD);
+			if (read_data == 0xFFFFFFFF)
+				return;
 
-// 			if (lost && *barrier) {
-// 				read_data = *barrier;
-// 				barrier++;
-// 			}
+			if (lost && *barrier) {
+				read_data = *barrier;
+				barrier++;
+			}
 
-// 			memcpy(bufp, &read_data, 4);
-// 			bufp += 4;
-// 			drvdata->len += 4;
-// 		}
-// 	}
-// }
+			memcpy(bufp, &read_data, 4);
+			bufp += 4;
+			drvdata->len += 4;
+		}
+	}
+}
 
 
 
@@ -208,73 +212,17 @@ static void tmc_etb_disable_hw(struct tmc_drvdata *drvdata)
 	CS_LOCK(drvdata->base);
 }
 
-#ifdef _ETF_RETRIEVED_IMPLEMENTED_LANRAN
 #define BUF_SIZE 0x10000
 #define ETB_STATUS_REG 0x00c
-#define MY_FILE "~/trace_result/trace1.out"
+#define MY_FILE "/home/root/trace_result/trace1.out"
 
-static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
+static void save_to_file(struct tmc_drvdata *drvdata)
 {
    
-    void __iomem *readbuff;
-    unsigned int reg, status;
-    char *bufp;
-    int readtimes;
-    mm_segment_t old_fs;
-    const int memwidth = BUF_SIZE / 4;
-    bool lost = false;
-    const unsigned int *barrier = barrier_pkt;
-    static char tracebuf[BUF_SIZE + 10];
     static struct file *file = NULL;
 
-    //clean up the trace buffer
-    memset(tracebuf, 0, BUF_SIZE);
-    *bufp = tracebuf;
-
-    unsigned int bufferlen = 0;
-    int i;
-    /*
-	 * Get a hold of the status register and see if a wrap around
-	 * has occurred.
-	 */
-    status = ioread32(drvdata->base + 0x00c);
-    if ((status & 0x1) == 0x1)
-    {
-        printk("[ETM:] etf buffer is full\n");
-        lost = true;
-    }
-
-    // get the etf buffer
-    readbuff = (void *)(drvdata->base + 0x010);
-
-    readtimes = 0;
-
-
-    // printk("[ETM: ] RRD: 0x%x", reg);
-    for (i = 0; i < memwidth; i++)
-    {
-        reg = ioread32(readbuff);
-        readtimes++;
-
-        if (reg == 0xFFFFFFFF)
-            break;
-
-        if (lost && *barrier)
-        {
-            reg = *barrier;
-            barrier++;
-        }
-        printk("[ETM] %d from buffer: %08x\n", readtimes, reg);
-        memcpy(bufp, &reg, 4);
-        bufp += 4;
-        bufferlen += 4;
-    }
-
-    printk(KERN_INFO "[ETM:] read to tracebuf from etf total %d times.\n", readtimes);
-    //write tracebuf to file
-
     if (file == NULL)
-        file = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
+        file = filp_open(MY_FILE, O_RDWR | O_CREAT, 0644);
     if (IS_ERR(file))
     {
         printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", MY_FILE);
@@ -282,19 +230,12 @@ static void tmc_eft_retrieve(struct tmc_drvdata *drvdata)
     }
     old_fs = get_fs();
     set_fs(KERNEL_DS);
-    file->f_op->write(file, (char *)tracebuf, bufferlen, &file->f_pos);
+    file->f_op->write(file, (char *)drvdata->buf, drvdata->len, &file->f_pos);
     set_fs(old_fs);
     filp_close(file, NULL);
     file = NULL;
 
-    //disable trace
-    reg = ioread32(drvdata->base + TMC_CTL);
-    reg &= 0x0;
-    iowrite32(reg, drvdata->base + TMC_CTL);
-
     return;
 }
-
-#endif
 
 #endif
