@@ -94,31 +94,31 @@ static void tmc_etb_disable_hw(struct tmc_drvdata *drvdata)
 	CS_LOCK(drvdata->base);
 }
 
-static void tmc_etf_enable_hw(struct tmc_drvdata *drvdata)
-{
-	CS_UNLOCK(drvdata->base);
+// static void tmc_etf_enable_hw(struct tmc_drvdata *drvdata)
+// {
+// 	CS_UNLOCK(drvdata->base);
 
-	/* Wait for TMCSReady bit to be set */
-	tmc_wait_for_tmcready(drvdata);
+// 	/* Wait for TMCSReady bit to be set */
+// 	tmc_wait_for_tmcready(drvdata);
 
-	writel_relaxed(TMC_MODE_HARDWARE_FIFO, drvdata->base + TMC_MODE);
-	writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
-		       drvdata->base + TMC_FFCR);
-	writel_relaxed(0x0, drvdata->base + TMC_BUFWM);
-	tmc_enable_hw(drvdata);
+// 	writel_relaxed(TMC_MODE_HARDWARE_FIFO, drvdata->base + TMC_MODE);
+// 	writel_relaxed(TMC_FFCR_EN_FMT | TMC_FFCR_EN_TI,
+// 		       drvdata->base + TMC_FFCR);
+// 	writel_relaxed(0x0, drvdata->base + TMC_BUFWM);
+// 	tmc_enable_hw(drvdata);
 
-	CS_LOCK(drvdata->base);
-}
+// 	CS_LOCK(drvdata->base);
+// }
 
-static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
-{
-	CS_UNLOCK(drvdata->base);
+// static void tmc_etf_disable_hw(struct tmc_drvdata *drvdata)
+// {
+// 	CS_UNLOCK(drvdata->base);
 
-	tmc_flush_and_stop(drvdata);
-	tmc_disable_hw(drvdata);
+// 	tmc_flush_and_stop(drvdata);
+// 	tmc_disable_hw(drvdata);
 
-	CS_LOCK(drvdata->base);
-}
+// 	CS_LOCK(drvdata->base);
+// }
 
 static int tmc_enable_etf_sink_sysfs(struct coresight_device *csdev)
 {

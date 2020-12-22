@@ -3,154 +3,109 @@
 #include <linux/kernel.h>
 #include <asm/io.h>
 #include <linux/slab.h>
+#include <linux/device.h>
+#include <linux/fs.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Huana Liu");
 MODULE_DESCRIPTION("A Linux kenrel module for tracing using ETM");
 MODULE_VERSION("0.01");
 
+static int pid = 10;
+module_param(pid,int,0644);
+
 #define DRVR_NAME "test_etm_register"
 #define BASE_ETM_ADDR 0x22040000
 #define BASE_PMU_ADDR 0x22030000
-#define BASE_FUNNEL_ADDR 0x20040000
+#define BASE_ETF_ADDR 0x20010000
+#define BASE_FUNNEL_MAIN_ADDR 0x20040000
+#define BASE_A72_FUNNEL_ADDR 0x220c0000
 
 #define ADDR_SIZE 1024
+#define BUF_SIZE 0x10001
 #define _DEBUG_LANRAN
 
-uint32_t CSTF_OLD = 0x300;
+#include "funnel.h"
+#include "etf.h"
+#include "etm.h"
 
-static inline uint32_t system_read_helper(uint64_t base, uint64_t offset)
+struct memory_mapped_address
 {
-    uint32_t val = 0;
-    void __iomem *virtual_addr = ioremap(base, offset + 8);
-    val = ioread32(virtual_addr + offset);
-    iounmap(virtual_addr);
-    return val;
+    struct funnel_drvdata a72_funnel_base_addr;
+    struct funnel_drvdata main_funnel_base_addr;
+    struct tmc_drvdata tmc_drvdata;
+    struct etmv4_drvdata etm_drvdata;
+} _default_addresses;
+
+void map_addresses(void)
+{
+    _default_addresses.a72_funnel_base_addr.base = ioremap(BASE_A72_FUNNEL_ADDR, ADDR_SIZE);
+    _default_addresses.main_funnel_base_addr.base = ioremap(BASE_FUNNEL_MAIN_ADDR, ADDR_SIZE);
+    _default_addresses.tmc_drvdata.base = ioremap(BASE_ETF_ADDR, ADDR_SIZE);
+    _default_addresses.etm_drvdata.base = ioremap(BASE_ETM_ADDR, ADDR_SIZE);
 }
 
-static inline void system_write_helper(uint64_t base, uint64_t offset, uint32_t new_val)
+void unmap_address(void)
 {
-    void __iomem *virtual_addr = ioremap(base, offset + 8);
-    iowrite32(new_val, virtual_addr + offset);
-    iounmap(virtual_addr);
+    iounmap(_default_addresses.a72_funnel_base_addr.base);
+    iounmap(_default_addresses.main_funnel_base_addr.base);
+    iounmap(_default_addresses.tmc_drvdata.base);
+    iounmap(_default_addresses.etm_drvdata.base);
 }
 
-static inline uint32_t system_read_TRCVICTLR(void)
+void init_config(void)
 {
-    return system_read_helper(BASE_ETM_ADDR, 0x080);
+    _default_addresses.etm_drvdata.config.cfg = 0x17;
+    _default_addresses.etm_drvdata.config.syncfreq = 0xC;
+    _default_addresses.etm_drvdata.config.ccctlr = 0x100;
+    _default_addresses.etm_drvdata.config.viiectlr = 0x1;
+    _default_addresses.etm_drvdata.trcid = 0x10;
+    _default_addresses.etm_drvdata.config.addr_val[0] = 0x0;
+    _default_addresses.etm_drvdata.config.addr_acc[0] = 0x6B04;
+    _default_addresses.etm_drvdata.config.addr_val[1] = ~0x0;
+    _default_addresses.etm_drvdata.config.addr_acc[1] = 0x6B04;
+    _default_addresses.etm_drvdata.nr_addr_cmp = 2;
+
+    // process id
+    printk("[ETM:] pid: %u\n",pid);
+    _default_addresses.etm_drvdata.config.ctxid_pid[0] = pid;
+    _default_addresses.etm_drvdata.numcidc = 1;
+    _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
+
+    // etf relavant
+    _default_addresses.tmc_drvdata.trigger_cntr = 0x1000;
+    _default_addresses.tmc_drvdata.buf = kmalloc(BUF_SIZE,GFP_KERNEL);
+    _default_addresses.tmc_drvdata.memwidth = BUF_SIZE /4 ;
 }
 
-// control register, set 1 to enable
-static inline uint32_t system_read_TRCPRGCTLR(void)
+static int __init lkm_etm_init(void)
 {
-    return system_read_helper(BASE_ETM_ADDR, 0x004);
-}
+    map_addresses();
+    init_config();
 
-static inline uint32_t system_write_TRCPRGCTLR(void)
-{
-    return system_read_helper(BASE_ETM_ADDR, 0x004);
-}
+    funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
+    funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
+    tmc_etb_enable_hw(&_default_addresses.tmc_drvdata);
+ 
+    etm4_enable_hw(&_default_addresses.etm_drvdata);
+    
 
-// funnel control register
-// static inline uint32_t system_read_CSTF_CR(void)
-// {
-//     return system_read_helper(BASE_FUNNEL_ADDR, 0x0);
-// }
+    // check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
 
-static inline u_int32_t enable_CSTF_CR(void)
-{
-    uint32_t old_val;
-    old_val = system_read_helper(BASE_FUNNEL_ADDR, 0x0);
-    system_write_helper(BASE_FUNNEL_ADDR, 0x0, old_val | 1);
-    CSTF_OLD = old_val;
-#ifdef _DEBUG_LANRAN
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "CSTF change: 0x%x -> 0x%x",
-           old_val, old_val | 1);
-#endif
-    return old_val;
-}
-
-static inline void disable_CSTF_CR(void)
-{
-
-#ifdef _DEBUG_LANRAN
-    uint32_t old_val;
-    old_val = system_read_helper(BASE_FUNNEL_ADDR, 0x0);
-#endif
-    system_write_helper(BASE_FUNNEL_ADDR, 0x0, CSTF_OLD);
-#ifdef _DEBUG_LANRAN
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "CSTF change: 0x%x -> 0x%x",
-           old_val, CSTF_OLD);
-#endif
-}
-
-static inline uint32_t system_read_LAR(void)
-{
-    return system_read_helper(BASE_ETM_ADDR, 0xfb0);
-}
-
-static inline uint32_t system_read_OSLAR(void)
-{
-    return system_read_helper(BASE_ETM_ADDR, 0x300);
-}
-
-static inline void OS_UNLOCK(void)
-{
-
-    // uint32_t old_val = system_read_OSLAR();
-    // system_write_helper(BASE_ETM_ADDR, 0x300, old_val & 0xfffffffe);
-
-#ifdef _DEBUG_LANRAN
-    // printk(KERN_INFO "[" DRVR_NAME "]"
-    //                  "OSLAR change: 0x%x -> 0x%x",
-    //        old_val, old_val & 0xfffffffe);
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "LAR change: 0x%x -> 0x%x",
-           system_read_LAR(), 0xc5acce55);
-#endif
-    system_write_helper(BASE_ETM_ADDR, 0xfb0, 0xc5acce55);
-}
-
-static inline void OS_LOCK(void)
-{
-
-    // uint32_t old_val = system_read_OSLAR();
-    // system_write_helper(BASE_ETM_ADDR, 0x300, old_val | 1);
-
-#ifdef _DEBUG_LANRAN
-    // printk(KERN_INFO "[" DRVR_NAME "]"
-    //                  "OSLAR change: 0x%x -> 0x%x",
-    //        old_val, old_val | 1);
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "LAR change: 0x%x -> 0x%x",
-           system_read_LAR(), 0x0);
-#endif
-    system_write_helper(BASE_ETM_ADDR, 0xfb0, 0x0);
-}
-
-static int __init lkm_example_init(void)
-{
-    OS_UNLOCK();
-    // uint32_t r = 0;
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "Hello, World!\n");
-
-    // r = system_read_OSLAR();
-    enable_CSTF_CR();
-    // printk(KERN_INFO "[" DRVR_NAME "]"
-    //                  "trcprgctlr: 0x%0x\n",
-    //        r);
     return 0;
 }
-static void __exit lkm_example_exit(void)
-{
 
-    disable_CSTF_CR();
-    printk(KERN_INFO "[" DRVR_NAME "]"
-                     "Goodbye, World!\n");
-    OS_LOCK();
+static void __exit lkm_etm_exit(void)
+{
+    etm4_disable_hw(&_default_addresses.etm_drvdata);
+    tmc_etb_disable_hw(&_default_addresses.tmc_drvdata);
+    save_to_file(&_default_addresses.tmc_drvdata);
+
+    funnel_disable_hw(&_default_addresses.a72_funnel_base_addr, 0);
+    funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);
+
+    kfree(_default_addresses.tmc_drvdata.buf);
+    unmap_address();
 }
-module_init(lkm_example_init);
-module_exit(lkm_example_exit);
+module_init(lkm_etm_init);
+module_exit(lkm_etm_exit);
