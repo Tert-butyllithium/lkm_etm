@@ -6,6 +6,8 @@
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <asm/uaccess.h>
+#include <linux/buffer_head.h>
 
 #include "coresight.h"
 
@@ -155,6 +157,7 @@ static void tmc_etb_dump_hw(struct tmc_drvdata *drvdata)
 		lost = true;
 
 	bufp = drvdata->buf;
+    // printk("[ETM:] bufp: %p",&bufp);
 	drvdata->len = 0;
 	barrier = barrier_pkt;
 	while (1) {
@@ -167,7 +170,7 @@ static void tmc_etb_dump_hw(struct tmc_drvdata *drvdata)
 				read_data = *barrier;
 				barrier++;
 			}
-
+            printk("[ETM:] read buffer %d: %08x",i,read_data);
 			memcpy(bufp, &read_data, 4);
 			bufp += 4;
 			drvdata->len += 4;
@@ -206,23 +209,24 @@ static void tmc_etb_disable_hw(struct tmc_drvdata *drvdata)
 	 * read before the TMC is disabled.
 	 */
 	// if (drvdata->mode == CS_MODE_SYSFS)
-	// 	tmc_etb_dump_hw(drvdata);
+    printk("[ETM:] get buf contents");
+	tmc_etb_dump_hw(drvdata);
 	tmc_disable_hw(drvdata);
 
 	CS_LOCK(drvdata->base);
 }
 
-#define BUF_SIZE 0x10000
-#define ETB_STATUS_REG 0x00c
+
 #define MY_FILE "/home/root/trace_result/trace1.out"
 
 static void save_to_file(struct tmc_drvdata *drvdata)
 {
-   
+    mm_segment_t old_fs;
     static struct file *file = NULL;
 
+    printk("saving to file");
     if (file == NULL)
-        file = filp_open(MY_FILE, O_RDWR | O_CREAT, 0644);
+        file = filp_open(MY_FILE, O_RDWR | O_CREAT, S_IRWXU);
     if (IS_ERR(file))
     {
         printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", MY_FILE);
@@ -230,7 +234,8 @@ static void save_to_file(struct tmc_drvdata *drvdata)
     }
     old_fs = get_fs();
     set_fs(KERNEL_DS);
-    file->f_op->write(file, (char *)drvdata->buf, drvdata->len, &file->f_pos);
+
+    kernel_write(file, drvdata->buf, drvdata->len, &file->f_pos);
     set_fs(old_fs);
     filp_close(file, NULL);
     file = NULL;
