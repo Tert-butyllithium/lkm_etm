@@ -1,29 +1,6 @@
 #ifndef _ETM_LANRAN_H
 #define _ETM_LANRAN_H
 
-#include <linux/kernel.h>
-#include <linux/moduleparam.h>
-#include <linux/init.h>
-#include <linux/types.h>
-#include <linux/device.h>
-#include <linux/io.h>
-#include <linux/err.h>
-#include <linux/fs.h>
-#include <linux/slab.h>
-#include <linux/delay.h>
-#include <linux/smp.h>
-#include <linux/sysfs.h>
-#include <linux/stat.h>
-#include <linux/clk.h>
-#include <linux/cpu.h>
-#include <linux/pm_wakeup.h>
-#include <linux/amba/bus.h>
-#include <linux/seq_file.h>
-#include <linux/uaccess.h>
-#include <linux/perf_event.h>
-#include <linux/pm_runtime.h>
-#include <asm/sections.h>
-#include <asm/local.h>
 
 #include "coresight.h"
 

@@ -1,10 +1,6 @@
 #ifndef _FUNNEL_LANRAN_H
 #define _FUNNEL_LANRAN_H
 
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <asm/io.h>
-
 #include "coresight.h"
 
 #define CORESIGHT_UNLOCK 0xc5acce55

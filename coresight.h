@@ -1,11 +1,7 @@
 #ifndef _CORESIGHT_LANRAN_H
 #define _CORESIGHT_LANRAN_H
 
-#include <linux/types.h>
-#include <linux/device.h>
-#include <linux/slab.h>
-#include <linux/delay.h>
-#include <asm/io.h>
+#include "kernel_replacement.h"
 
 #define CORESIGHT_LAR 0xfb0
 #define CORESIGHT_LSR 0xfb4

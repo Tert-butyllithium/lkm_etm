@@ -1,20 +1,3 @@
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <asm/io.h>
-#include <linux/slab.h>
-#include <linux/device.h>
-#include <linux/fs.h>
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Huana Liu");
-MODULE_DESCRIPTION("A Linux kenrel module for tracing using ETM");
-MODULE_VERSION("0.01");
-
-static int pid = 10;
-module_param(pid,int,0644);
-
-#define DRVR_NAME "test_etm_register"
 #define BASE_ETM_ADDR 0x22040000
 #define BASE_PMU_ADDR 0x22030000
 #define BASE_ETF_ADDR 0x20010000
@@ -23,7 +6,7 @@ module_param(pid,int,0644);
 
 #define ADDR_SIZE 1024
 #define BUF_SIZE 0x10001
-#define _DEBUG_LANRAN
+// #define _DEBUG_LANRAN
 
 #include "funnel.h"
 #include "etf.h"
@@ -55,6 +38,7 @@ void unmap_address(void)
 
 void init_config(void)
 {
+    u32 pid;
     _default_addresses.etm_drvdata.config.cfg = 0x17;
     _default_addresses.etm_drvdata.config.syncfreq = 0xC;
     _default_addresses.etm_drvdata.config.ccctlr = 0x100;
@@ -66,16 +50,17 @@ void init_config(void)
     _default_addresses.etm_drvdata.config.addr_acc[1] = 0x6B04;
     _default_addresses.etm_drvdata.nr_addr_cmp = 2;
 
+    pid = get_trace_pid();
     // process id
-    printk("[ETM:] pid: %u\n",pid);
+    printk("[ETM:] pid: %u\n", pid);
     _default_addresses.etm_drvdata.config.ctxid_pid[0] = pid;
     _default_addresses.etm_drvdata.numcidc = 1;
     _default_addresses.etm_drvdata.config.vinst_ctrl = 0xf0201;
 
     // etf relavant
     _default_addresses.tmc_drvdata.trigger_cntr = 0x1000;
-    _default_addresses.tmc_drvdata.buf = kmalloc(BUF_SIZE,GFP_KERNEL);
-    _default_addresses.tmc_drvdata.memwidth = BUF_SIZE /4 ;
+    _default_addresses.tmc_drvdata.buf = kmalloc(BUF_SIZE, GFP_KERNEL);
+    _default_addresses.tmc_drvdata.memwidth = BUF_SIZE / 4;
 }
 
 static int __init lkm_etm_init(void)
@@ -86,9 +71,8 @@ static int __init lkm_etm_init(void)
     funnel_enable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_enable_hw(&_default_addresses.main_funnel_base_addr, 0);
     tmc_etb_enable_hw(&_default_addresses.tmc_drvdata);
- 
+
     etm4_enable_hw(&_default_addresses.etm_drvdata);
-    
 
     // check_mem(_default_addresses.etm_drvdata.base, "/sdcard/Download/mem_check/myetm.out");
 
@@ -99,7 +83,7 @@ static void __exit lkm_etm_exit(void)
 {
     etm4_disable_hw(&_default_addresses.etm_drvdata);
     tmc_etb_disable_hw(&_default_addresses.tmc_drvdata);
-    save_to_file(&_default_addresses.tmc_drvdata);
+    // save_to_file(&_default_addresses.tmc_drvdata);
 
     funnel_disable_hw(&_default_addresses.a72_funnel_base_addr, 0);
     funnel_disable_hw(&_default_addresses.main_funnel_base_addr, 0);

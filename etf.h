@@ -1,13 +1,6 @@
 #ifndef _ETF_LANRAN_H
 #define _ETF_LANRAN_H
 #define _ETF_RETRIEVED_IMPLEMENTED_LANRAN
-#include <linux/slab.h>
-#include <asm/io.h>
-#include <linux/device.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <asm/uaccess.h>
-#include <linux/buffer_head.h>
 
 #include "coresight.h"
 
@@ -217,30 +210,30 @@ static void tmc_etb_disable_hw(struct tmc_drvdata *drvdata)
 }
 
 
-#define MY_FILE "/home/root/trace_result/trace1.out"
+// #define MY_FILE "/home/root/trace_result/trace1.out"
 
-static void save_to_file(struct tmc_drvdata *drvdata)
-{
-    mm_segment_t old_fs;
-    static struct file *file = NULL;
+// static void save_to_file(struct tmc_drvdata *drvdata)
+// {
+//     mm_segment_t old_fs;
+//     static struct file *file = NULL;
 
-    printk("saving to file");
-    if (file == NULL)
-        file = filp_open(MY_FILE, O_RDWR | O_CREAT, S_IRWXU);
-    if (IS_ERR(file))
-    {
-        printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", MY_FILE);
-        return;
-    }
-    old_fs = get_fs();
-    set_fs(KERNEL_DS);
+//     printk("saving to file");
+//     if (file == NULL)
+//         file = filp_open(MY_FILE, O_RDWR | O_CREAT, S_IRWXU);
+//     if (IS_ERR(file))
+//     {
+//         printk(KERN_INFO "[ETM:]error occured while opening file %s, exiting...\n", MY_FILE);
+//         return;
+//     }
+//     old_fs = get_fs();
+//     set_fs(KERNEL_DS);
 
-    kernel_write(file, drvdata->buf, drvdata->len, &file->f_pos);
-    set_fs(old_fs);
-    filp_close(file, NULL);
-    file = NULL;
+//     kernel_write(file, drvdata->buf, drvdata->len, &file->f_pos);
+//     set_fs(old_fs);
+//     filp_close(file, NULL);
+//     file = NULL;
 
-    return;
-}
+//     return;
+// }
 
 #endif
