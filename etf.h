@@ -164,7 +164,7 @@ static void tmc_etb_dump_hw(struct tmc_drvdata *drvdata)
 				barrier++;
 			}
             printk("[ETM:] read buffer %d: %08x",i,read_data);
-			memcpy(bufp, &read_data, 4);
+			// memcpy(bufp, &read_data, 4);
 			bufp += 4;
 			drvdata->len += 4;
 		}
